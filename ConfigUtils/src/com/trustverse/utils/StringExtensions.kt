@@ -5,8 +5,6 @@
 
 package com.trustverse.utils
 
-import kotlin.reflect.KClass
-
 /**
  * Converts String representation of boolean to Boolean
  * @return Boolean value as a result of string conversion
@@ -55,25 +53,6 @@ fun String.toType(type: Class<*>): Any {
         Long::class.java -> return toLong()
         Float::class.java -> return toFloat()
         Double::class.java -> return toDouble()
-        else -> throw IllegalArgumentException("Invalid \"type\" argument value.")
-    }
-}
-
-/**
- * Converts String representation to specified type
- * @param type type to convert into
- * @return Result of type conversion
- * @throws IllegalArgumentException
- */
-fun String.toType(type: KClass<*>): Any {
-    when (type) {
-        String::class -> return this
-        Boolean::class -> return toBoolean()
-        Byte::class -> return toByte()
-        Int::class -> return toInt()
-        Long::class -> return toLong()
-        Float::class -> return toFloat()
-        Double::class -> return toDouble()
         else -> throw IllegalArgumentException("Invalid \"type\" argument value.")
     }
 }
