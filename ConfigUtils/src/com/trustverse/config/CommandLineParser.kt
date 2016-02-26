@@ -22,7 +22,7 @@ class CommandLineParser(private val args: Array<String>,
     private val Params = HashMap<String, ParamInfo>()
 
     init {
-        Params.putAll(params.map { x -> Pair(x.Name, x) })
+        Params.putAll(params.map { Pair(it.Name, it) })
         process()
     }
 
