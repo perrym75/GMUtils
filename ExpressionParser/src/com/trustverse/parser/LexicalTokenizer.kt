@@ -1,7 +1,5 @@
 package com.trustverse.parser
 
-import java.util.*
-
 /**
  * Created by g.minkailov on 01.03.2016.
  */
@@ -25,9 +23,7 @@ enum class SymbolType(val Symbols: String) {
     LEXEME_SEPARATOR(" \r\n")
 }
 
-class LexicalToken(val Type: LexicalTokenType, val Value: String)
-
-class LexicalParser(val expression: String) : Iterable<LexicalToken>, Iterator<LexicalToken> {
+class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterator<LexicalToken> {
     private var curTokenType = LexicalTokenType.START
     private var curSymbolType = SymbolType.NONE
     private var prevSymbolType = SymbolType.NONE
@@ -37,12 +33,6 @@ class LexicalParser(val expression: String) : Iterable<LexicalToken>, Iterator<L
 
     override operator fun iterator(): Iterator<LexicalToken> {
         return this
-    }
-
-    override operator fun next(): LexicalToken {
-        val ret = curToken
-        curToken = null
-        return ret!!
     }
 
     private fun getSymbolType(ch: Char): SymbolType {
@@ -61,7 +51,26 @@ class LexicalParser(val expression: String) : Iterable<LexicalToken>, Iterator<L
         curTokenType = tokenType
     }
 
+    override operator fun next(): LexicalToken {
+        val ret = curToken
+        curToken = null
+        return ret!!
+    }
+
     override operator fun hasNext(): Boolean {
+        evalNext()
+
+        if (curToken != null) {
+            return true
+        }
+
+        prevSymbolType = SymbolType.NONE
+        curCharIndex = 0
+
+        return false
+    }
+
+    private fun evalNext() {
         while (curCharIndex < expression.length) {
             val ch = expression[curCharIndex]
 
@@ -94,7 +103,7 @@ class LexicalParser(val expression: String) : Iterable<LexicalToken>, Iterator<L
                 SymbolType.OPERATOR -> {
                     if (curSymbolType != prevSymbolType) {
                         startNewToken(LexicalTokenType.OPERATOR)
-                    } else throw IllegalArgumentException("Two consequent $ch operators")
+                    } else throw IllegalArgumentException("Two consequent operators")
 
                     tokenValue.append(ch)
                 }
@@ -131,18 +140,9 @@ class LexicalParser(val expression: String) : Iterable<LexicalToken>, Iterator<L
             curCharIndex++
 
             if (curToken != null)
-                return true
+                return
         }
 
         startNewToken(LexicalTokenType.START)
-        if (curToken != null) {
-            return true
-        }
-
-        curTokenType = LexicalTokenType.START
-        prevSymbolType = SymbolType.NONE
-        curCharIndex = 0
-
-        return false
     }
 }
