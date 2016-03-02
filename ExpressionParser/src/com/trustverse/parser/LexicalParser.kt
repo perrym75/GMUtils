@@ -29,18 +29,20 @@ class LexicalToken(val Type: LexicalTokenType, val Value: String)
 
 class LexicalParser(val expression: String) : Iterable<LexicalToken>, Iterator<LexicalToken> {
     private var curTokenType = LexicalTokenType.START
+    private var curSymbolType = SymbolType.NONE
+    private var prevSymbolType = SymbolType.NONE
     private var tokenValue = StringBuilder()
+    private var curCharIndex = 0
+    private var curToken: LexicalToken? = null
 
     override operator fun iterator(): Iterator<LexicalToken> {
         return this
     }
 
     override operator fun next(): LexicalToken {
-        throw NotImplementedError()
-    }
-
-    override operator fun hasNext(): Boolean {
-        throw NotImplementedError()
+        val ret = curToken
+        curToken = null
+        return ret!!
     }
 
     private fun getSymbolType(ch: Char): SymbolType {
@@ -51,90 +53,96 @@ class LexicalParser(val expression: String) : Iterable<LexicalToken>, Iterator<L
         throw IllegalArgumentException("Symbol '$ch' is not a part of grammar")
     }
 
-    fun tokenize(): List<LexicalToken> {
-        val tokens = LinkedList<LexicalToken>()
-
-        fun startNewToken(tokenType: LexicalTokenType) {
-            if (curTokenType != LexicalTokenType.START && !tokenValue.isEmpty()) {
-                tokens.add(LexicalToken(curTokenType, tokenValue.toString()))
-                tokenValue = StringBuilder()
-            }
-            curTokenType = tokenType
+    fun startNewToken(tokenType: LexicalTokenType) {
+        if (curTokenType != LexicalTokenType.START && !tokenValue.isEmpty()) {
+            curToken = LexicalToken(curTokenType, tokenValue.toString())
+            tokenValue = StringBuilder()
         }
+        curTokenType = tokenType
+    }
 
-        try {
-            var prevSymbolType = SymbolType.NONE
+    override operator fun hasNext(): Boolean {
+        while (curCharIndex < expression.length) {
+            val ch = expression[curCharIndex]
 
-            for (ch in expression) {
-                var curSymbolType = getSymbolType(ch)
-                if (curSymbolType != SymbolType.DIGIT && prevSymbolType == SymbolType.NUMBER_DECIMAL_SEPARATOR) throw IllegalArgumentException("Only digit can follow '$ch' symbol")
+            curSymbolType = getSymbolType(ch)
+            if (curSymbolType != SymbolType.DIGIT && prevSymbolType == SymbolType.NUMBER_DECIMAL_SEPARATOR) throw IllegalArgumentException("Only digit can follow '$ch' symbol")
 
-                if (curSymbolType != SymbolType.QUOTE && prevSymbolType == SymbolType.QUOTE && curTokenType == LexicalTokenType.TEXT) {
+            if (curSymbolType != SymbolType.QUOTE && prevSymbolType == SymbolType.QUOTE && curTokenType == LexicalTokenType.TEXT) {
+                tokenValue.append(ch)
+                curCharIndex++
+                continue
+            }
+
+            when (curSymbolType) {
+                SymbolType.DIGIT -> {
+                    if (curSymbolType != prevSymbolType && prevSymbolType != SymbolType.NUMBER_DECIMAL_SEPARATOR) {
+                        startNewToken(LexicalTokenType.NUMBER)
+                    }
+
                     tokenValue.append(ch)
-                    continue
                 }
 
-                when (curSymbolType) {
-                    SymbolType.DIGIT -> {
-                        if (curSymbolType != prevSymbolType && prevSymbolType != SymbolType.NUMBER_DECIMAL_SEPARATOR) {
-                            startNewToken(LexicalTokenType.NUMBER)
-                        }
-
-                        tokenValue.append(ch)
+                SymbolType.NUMBER_DECIMAL_SEPARATOR -> {
+                    if (curSymbolType != prevSymbolType && prevSymbolType != SymbolType.DIGIT) {
+                        startNewToken(LexicalTokenType.NUMBER)
                     }
 
-                    SymbolType.NUMBER_DECIMAL_SEPARATOR -> {
-                        if (curSymbolType != prevSymbolType && prevSymbolType != SymbolType.DIGIT) {
-                            startNewToken(LexicalTokenType.NUMBER)
-                        }
-
-                        tokenValue.append(ch)
-                    }
-
-                    SymbolType.OPERATOR -> {
-                        if (curSymbolType != prevSymbolType) {
-                            startNewToken(LexicalTokenType.OPERATOR)
-                        } else throw IllegalArgumentException("Two consequent $ch operators")
-
-                        tokenValue.append(ch)
-                    }
-
-                    SymbolType.LEFT_PARENTHESIS -> {
-                        startNewToken(LexicalTokenType.LEFT_PARENTHESIS)
-
-                        tokenValue.append(ch)
-                    }
-
-                    SymbolType.RIGHT_PARENTHESIS -> {
-                        startNewToken(LexicalTokenType.RIGHT_PARENTHESIS)
-
-                        tokenValue.append(ch)
-                    }
-
-                    SymbolType.QUOTE -> {
-                        if (curTokenType == LexicalTokenType.TEXT) {
-                            curSymbolType = SymbolType.NONE
-                        } else {
-                            startNewToken(LexicalTokenType.TEXT)
-                        }
-
-                        tokenValue.append(ch)
-                    }
-
-                    SymbolType.LEXEME_SEPARATOR -> {}
-
-                    else -> throw UnsupportedOperationException()
+                    tokenValue.append(ch)
                 }
-                prevSymbolType = curSymbolType
-            }
 
-            if (!tokenValue.isEmpty() && curTokenType != LexicalTokenType.START) {
-                tokens.add(LexicalToken(curTokenType, tokenValue.toString()))
+                SymbolType.OPERATOR -> {
+                    if (curSymbolType != prevSymbolType) {
+                        startNewToken(LexicalTokenType.OPERATOR)
+                    } else throw IllegalArgumentException("Two consequent $ch operators")
+
+                    tokenValue.append(ch)
+                }
+
+                SymbolType.LEFT_PARENTHESIS -> {
+                    startNewToken(LexicalTokenType.LEFT_PARENTHESIS)
+
+                    tokenValue.append(ch)
+                }
+
+                SymbolType.RIGHT_PARENTHESIS -> {
+                    startNewToken(LexicalTokenType.RIGHT_PARENTHESIS)
+
+                    tokenValue.append(ch)
+                }
+
+                SymbolType.QUOTE -> {
+                    if (curTokenType == LexicalTokenType.TEXT) {
+                        curSymbolType = SymbolType.NONE
+                    } else {
+                        startNewToken(LexicalTokenType.TEXT)
+                    }
+
+                    tokenValue.append(ch)
+                }
+
+                SymbolType.LEXEME_SEPARATOR -> {
+                }
+
+                else -> throw UnsupportedOperationException()
             }
-        } finally {
-            curTokenType = LexicalTokenType.START
+            prevSymbolType = curSymbolType
+
+            curCharIndex++
+
+            if (curToken != null)
+                return true
         }
 
-        return tokens
+        startNewToken(LexicalTokenType.START)
+        if (curToken != null) {
+            return true
+        }
+
+        curTokenType = LexicalTokenType.START
+        prevSymbolType = SymbolType.NONE
+        curCharIndex = 0
+
+        return false
     }
 }

@@ -6,8 +6,8 @@ fun main(args: Array<String>) {
         val params = ParamsConfig(args)
         params.print()
 
-        val ep = LexicalParser("-(1+2*7) \"2\" / 2.2")
-        for (token in ep.tokenize()) {
+        val ep = LexicalParser("\"2\"-(1+2*7) / 2.2 ")
+        for (token in ep) {
             println("Token type: ${token.Type} value: ${token.Value}")
         }
     } catch (e: Exception) {
