@@ -10,6 +10,8 @@ fun main(args: Array<String>) {
         for (token in ep) {
             println("Token type: ${token.Type} value: ${token.Value}")
         }
+
+        for (i in iterate {})
     } catch (e: Exception) {
         println(e.message)
     }
