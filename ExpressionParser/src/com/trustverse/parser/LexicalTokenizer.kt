@@ -20,7 +20,7 @@ enum class SymbolType(val Symbols: String) {
     LEFT_PARENTHESIS("("),
     RIGHT_PARENTHESIS(")"),
     QUOTE("\""),
-    LEXEME_SEPARATOR(" \r\n")
+    LEXEME_SEPARATOR(" \t\r\n")
 }
 
 class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterator<LexicalToken> {
