@@ -4,7 +4,6 @@ package com.trustverse.parser
  * Created by g.minkailov on 01.03.2016.
  */
 enum class LexicalTokenType {
-    START,
     NUMBER,
     OPERATOR,
     LEFT_PARENTHESIS,
@@ -13,20 +12,29 @@ enum class LexicalTokenType {
 }
 
 enum class SymbolType(val Symbols: String) {
-    NONE(""),
     DIGIT("0123456789"),
     NUMBER_DECIMAL_SEPARATOR(".,"),
     OPERATOR("+-*/"),
     LEFT_PARENTHESIS("("),
     RIGHT_PARENTHESIS(")"),
     QUOTE("\""),
-    LEXEME_SEPARATOR(" \t\r\n")
+    LEXEME_SEPARATOR(" \t\r\n");
+
+    companion object {
+        fun fromChar(ch: Char): SymbolType {
+            for (st in values()) {
+                if (ch in st.Symbols) return st
+            }
+
+            throw IllegalArgumentException("Symbol '$ch' is not a part of grammar")
+        }
+    }
 }
 
 class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterator<LexicalToken> {
-    private var curTokenType = LexicalTokenType.START
-    private var curSymbolType = SymbolType.NONE
-    private var prevSymbolType = SymbolType.NONE
+    private var curTokenType: LexicalTokenType? = null
+    private var curSymbolType: SymbolType? = null
+    private var prevSymbolType: SymbolType? = null
     private var tokenValue = StringBuilder()
     private var curCharIndex = 0
     private var curToken: LexicalToken? = null
@@ -35,17 +43,9 @@ class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterato
         return this
     }
 
-    private fun getSymbolType(ch: Char): SymbolType {
-        for (st in SymbolType.values()) {
-            if (ch in st.Symbols) return st
-        }
-
-        throw IllegalArgumentException("Symbol '$ch' is not a part of grammar")
-    }
-
-    fun startNewToken(tokenType: LexicalTokenType) {
-        if (curTokenType != LexicalTokenType.START && !tokenValue.isEmpty()) {
-            curToken = LexicalToken(curTokenType, tokenValue.toString())
+    fun startNewToken(tokenType: LexicalTokenType?) {
+        if (curTokenType != null && !tokenValue.isEmpty()) {
+            curToken = LexicalToken(curTokenType!!, tokenValue.toString())
             tokenValue = StringBuilder()
         }
         curTokenType = tokenType
@@ -64,17 +64,20 @@ class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterato
             return true
         }
 
-        prevSymbolType = SymbolType.NONE
-        curCharIndex = 0
-
         return false
+    }
+
+    fun reset() {
+        curTokenType = null
+        prevSymbolType = null
+        curCharIndex = 0
     }
 
     private fun evalNext() {
         while (curCharIndex < expression.length) {
             val ch = expression[curCharIndex]
 
-            curSymbolType = getSymbolType(ch)
+            curSymbolType = SymbolType.fromChar(ch)
             if (curSymbolType != SymbolType.DIGIT && prevSymbolType == SymbolType.NUMBER_DECIMAL_SEPARATOR) throw IllegalArgumentException("Only digit can follow '$ch' symbol")
 
             if (curSymbolType != SymbolType.QUOTE && prevSymbolType == SymbolType.QUOTE && curTokenType == LexicalTokenType.TEXT) {
@@ -122,7 +125,7 @@ class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterato
 
                 SymbolType.QUOTE -> {
                     if (curTokenType == LexicalTokenType.TEXT) {
-                        curSymbolType = SymbolType.NONE
+                        curSymbolType = null
                     } else {
                         startNewToken(LexicalTokenType.TEXT)
                     }
@@ -143,6 +146,6 @@ class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterato
                 return
         }
 
-        startNewToken(LexicalTokenType.START)
+        startNewToken(null)
     }
 }
