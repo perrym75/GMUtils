@@ -130,11 +130,9 @@ class LexicalTokenIterator(val expression: String) : Iterator<LexicalToken> {
                 else -> throw UnsupportedOperationException()
             }
             prevSymbolType = curSymbolType
-
             curCharIndex++
 
-            if (curToken != null)
-                return
+            if (curToken != null) return
         }
 
         startNewToken(null)
