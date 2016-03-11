@@ -31,25 +31,13 @@ enum class SymbolType(val Symbols: String) {
     }
 }
 
-class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterator<LexicalToken> {
+class LexicalTokenIterator(val expression: String) : Iterator<LexicalToken> {
     private var curTokenType: LexicalTokenType? = null
     private var curSymbolType: SymbolType? = null
     private var prevSymbolType: SymbolType? = null
     private var tokenValue = StringBuilder()
     private var curCharIndex = 0
     private var curToken: LexicalToken? = null
-
-    override operator fun iterator(): Iterator<LexicalToken> {
-        return this
-    }
-
-    fun startNewToken(tokenType: LexicalTokenType?) {
-        if (curTokenType != null && !tokenValue.isEmpty()) {
-            curToken = LexicalToken(curTokenType!!, tokenValue.toString())
-            tokenValue = StringBuilder()
-        }
-        curTokenType = tokenType
-    }
 
     override operator fun next(): LexicalToken {
         val ret = curToken
@@ -59,18 +47,21 @@ class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterato
 
     override operator fun hasNext(): Boolean {
         evalNext()
-
-        if (curToken != null) {
-            return true
-        }
-
-        return false
+        return curToken != null
     }
 
     fun reset() {
         curTokenType = null
         prevSymbolType = null
         curCharIndex = 0
+    }
+
+    fun startNewToken(tokenType: LexicalTokenType?) {
+        if (curTokenType != null && !tokenValue.isEmpty()) {
+            curToken = LexicalToken(curTokenType!!, tokenValue.toString())
+            tokenValue = StringBuilder()
+        }
+        curTokenType = tokenType
     }
 
     private fun evalNext() {
@@ -147,5 +138,13 @@ class LexicalTokenizer(val expression: String) : Iterable<LexicalToken>, Iterato
         }
 
         startNewToken(null)
+    }
+}
+
+class LexicalTokenizer(val expression: String) : Iterable<LexicalToken> {
+    val iterator = LexicalTokenIterator(expression)
+
+    override operator fun iterator(): Iterator<LexicalToken> {
+        return iterator
     }
 }
