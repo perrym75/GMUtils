@@ -1,8 +1,12 @@
 import com.trustverse.config.ParamsConfig
 import com.trustverse.parser.LexicalTokenizer
+import com.trustverse.utils.iterate
 
 fun main(args: Array<String>) {
     try {
+        var i = 0
+        iterate { i++; if (i > 10) null else i }.forEach { println(it) }
+
         val params = ParamsConfig(args)
         params.print()
 
