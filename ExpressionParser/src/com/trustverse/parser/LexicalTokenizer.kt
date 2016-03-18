@@ -142,7 +142,7 @@ class LexicalTokenIterator(val expression: String) : Iterator<LexicalToken> {
 class LexicalTokenizer(val expression: String) : Iterable<LexicalToken> {
     val iterator = LexicalTokenIterator(expression)
 
-    override operator fun iterator(): Iterator<LexicalToken> {
+    override fun iterator(): Iterator<LexicalToken> {
         return iterator
     }
 }
