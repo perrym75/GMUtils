@@ -6,6 +6,7 @@ package com.trustverse.utils
 
 private class UniversalIterator<T>(private val closure: () -> T?) : Iterator<T> {
     private var value: T? = null
+
     override fun hasNext(): Boolean {
         value = closure()
         return value != null
